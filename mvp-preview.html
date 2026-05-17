@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hopit MVP 프리뷰 — 토끼 vs 거북이</title>
+  <style>
+    /* ===== TOKENS ===== */
+    :root {
+      --rabbit:      #7FB069;
+      --turtle:      #5D8F3F;
+      --brown:       #8B5A3C;
+      --carrot:      #E67E22;
+      --beige:       #E8DCC8;
+      --pale-green:  #C9E4A6;
+      --gray:        #D4D4C8;
+      --text-dark:   #2D5016;
+      --text-med:    #333333;
+      --text-light:  #666666;
+      --bg:          #F5F3F0;
+      --bg-light:    #F9F9F9;
+      --border-r:    8px;
+      --success:     #72AC5A;
+      --warning:     #F5A623;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1a2e;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-med);
+      min-height: 100vh;
+    }
+
+    /* ===== HEADER ===== */
+    .page-header {
+      text-align: center;
+      padding: 40px 20px 24px;
+      color: #fff;
+    }
+    .page-header h1 { font-size: 28px; margin-bottom: 8px; }
+    .page-header p  { font-size: 14px; opacity: .6; }
+
+    /* ===== TAB NAV ===== */
+    .tab-bar {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 0 20px 24px;
+    }
+    .tab-btn {
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #fff;
+      border-radius: 20px;
+      padding: 8px 18px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .tab-btn:hover  { background: rgba(255,255,255,.2); }
+    .tab-btn.active { background: var(--rabbit); border-color: var(--rabbit); }
+
+    /* ===== PHONE WRAPPER ===== */
+    .phone-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 0 20px 60px;
+    }
+    .phone {
+      width: 375px;
+      min-height: 812px;
+      background: var(--bg);
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,255,255,.1);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== STATUS BAR ===== */
+    .status-bar {
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ===== HEADER BAR ===== */
+    .header-bar {
+      background: #fff;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--gray);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-bar .title { font-size: 17px; font-weight: 600; color: var(--text-dark); }
+
+    /* ===== SCREEN CONTENT ===== */
+    .screen { display: none; flex: 1; overflow-y: auto; flex-direction: column; }
+    .screen.active { display: flex; }
+    .screen-inner { padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+
+    /* ===== COMPONENTS ===== */
+
+    /* Card */
+    .card {
+      background: #fff;
+      border-radius: var(--border-r);
+      border: 2px solid var(--gray);
+      padding: 16px;
+      box-shadow: 3px 3px 0 rgba(0,0,0,.08);
+    }
+    .card.success { border-color: var(--rabbit); }
+    .card.warning { border-color: var(--carrot); }
+    .card.beige   { background: var(--beige); border-color: #c9b99a; }
+    .card.celebration { background: #FFF9E6; border-color: var(--warning); }
+
+    /* Hop Button */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 44px;
+      border-radius: var(--border-r);
+      font-size: 14px;
+      font-weight: 600;
+      border: 2px solid;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn-primary  { background: var(--rabbit); border-color: var(--turtle); color: #fff; }
+    .btn-secondary{ background: var(--beige); border-color: var(--brown); color: var(--text-med); }
+    .btn-outline  { background: #fff; border-color: var(--turtle); color: var(--turtle); }
+
+    /* Progress Bar */
+    .progress-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .progress-label-row { display: flex; justify-content: space-between; align-items: center; }
+    .progress-label { font-size: 13px; font-weight: 600; color: var(--text-dark); }
+    .progress-val { font-size: 13px; font-weight: 700; }
+    .progress-track {
+      height: 14px;
+      background: var(--beige);
+      border-radius: 3px;
+      border: 1px solid var(--gray);
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width .4s ease;
+    }
+    .progress-fill.rabbit { background: var(--rabbit); }
+    .progress-fill.turtle { background: var(--turtle); }
+    .progress-detail { font-size: 11px; color: var(--text-light); }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #FFF3CD;
+      border: 1px solid var(--warning);
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--brown);
+    }
+
+    /* Stats grid */
+    .stats-grid { display: flex; justify-content: space-around; text-align: center; }
+    .stat-item .big  { font-size: 26px; font-weight: 700; }
+    .stat-item .lbl  { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+    .big.rabbit { color: var(--rabbit); }
+    .big.turtle { color: var(--turtle); }
+    .big.dark   { color: var(--text-dark); }
+
+    /* Stat row */
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+    .stat-row + .stat-row { border-top: 1px solid var(--gray); }
+    .stat-row .key { font-size: 13px; color: var(--text-light); }
+    .stat-row .val { font-size: 16px; font-weight: 700; }
+    .stat-row .val.highlight { color: var(--rabbit); }
+
+    /* Weekly chart */
+    .weekly-chart {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      height: 100px;
+      gap: 4px;
+    }
+    .weekly-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+    .weekly-bar { width: 18px; border-radius: 3px; transition: height .3s; }
+    .weekly-day { font-size: 10px; color: var(--text-light); }
+
+    /* Checkbox row */
+    .check-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+    .check-box {
+      width: 22px; height: 22px;
+      border: 2px solid var(--rabbit);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .check-box.checked { background: var(--rabbit); }
+    .check-box.checked::after { content: '✓'; color: #fff; font-size: 13px; font-weight: 700; }
+
+    /* Goal buttons */
+    .goal-btns { display: flex; gap: 8px; margin-bottom: 10px; }
+    .goal-btn {
+      flex: 1; height: 38px; border-radius: 6px; border: 2px solid var(--gray);
+      background: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+      color: var(--turtle);
+    }
+    .goal-btn.selected { background: var(--rabbit); border-color: var(--turtle); color: #fff; }
+
+    /* Date picker row */
+    .date-row { display: flex; align-items: center; gap: 8px; }
+    .date-btn {
+      flex: 1; height: 38px; border-radius: 6px; border: 2px solid var(--gray);
+      background: #fff; font-size: 13px; color: var(--turtle); cursor: pointer;
+      font-weight: 500;
+    }
+    .date-sep { font-size: 16px; color: var(--text-light); flex-shrink: 0; }
+
+    /* Section title */
+    .section-title { font-size: 14px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px; }
+    .section-hint  { font-size: 12px; color: var(--text-light); margin-bottom: 10px; }
+
+    /* Text input */
+    .text-input {
+      width: 100%;
+      height: 40px;
+      border: 2px solid var(--gray);
+      border-radius: 6px;
+      padding: 0 12px;
+      font-size: 14px;
+      background: #fff;
+    }
+    .text-input:focus { outline: none; border-color: var(--rabbit); }
+
+    /* Auth card */
+    .auth-card {
+      text-align: center;
+      padding: 20px 16px;
+    }
+    .auth-emoji { font-size: 40px; margin-bottom: 10px; }
+    .auth-title { font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+    .auth-desc  { font-size: 13px; color: var(--text-light); margin-bottom: 4px; }
+    .auth-req   { font-size: 12px; color: var(--text-light); margin-bottom: 14px; }
+
+    /* GPS Map placeholder */
+    .map-placeholder {
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border-radius: 8px;
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed var(--turtle);
+      gap: 8px;
+    }
+    .map-placeholder .map-icon { font-size: 40px; }
+    .map-placeholder .map-txt { font-size: 14px; color: var(--turtle); font-weight: 600; }
+
+    /* GPS stats */
+    .gps-stats { display: flex; justify-content: space-around; text-align: center; }
+    .gps-stat .val { font-size: 22px; font-weight: 700; color: var(--text-dark); }
+    .gps-stat .lbl { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+    /* Photo area */
+    .photo-area {
+      background: var(--gray);
+      border-radius: 8px;
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed var(--text-light);
+      gap: 8px;
+    }
+    .photo-area .ph-icon { font-size: 40px; }
+    .photo-area .ph-txt  { font-size: 14px; color: var(--text-light); }
+    .photo-btns { display: flex; gap: 8px; }
+    .photo-btns .btn { flex: 1; }
+
+    /* Onboarding */
+    .ob-center { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .ob-emoji  { font-size: 72px; }
+    .ob-title  { font-size: 26px; font-weight: 700; color: var(--text-dark); }
+    .ob-sub    { font-size: 16px; color: var(--text-light); }
+    .ob-desc   { font-size: 14px; color: var(--text-med); line-height: 1.7; text-align: center; }
+    .feature-list { display: flex; flex-direction: column; gap: 8px; width: 100%; text-align: left; }
+    .feature-item { font-size: 14px; color: var(--text-med); padding: 4px 0; }
+
+    /* Result */
+    .result-center { text-align: center; display: flex; flex-direction: column; align-items: center; }
+    .result-confetti { font-size: 48px; margin-bottom: 8px; }
+    .result-title   { font-size: 22px; font-weight: 700; color: var(--text-dark); }
+    .winner-emoji   { font-size: 64px; margin-bottom: 12px; }
+    .winner-text    { font-size: 18px; font-weight: 700; color: var(--rabbit); text-align: center; margin-bottom: 8px; }
+    .final-rate     { font-size: 13px; color: var(--text-light); margin-bottom: 14px; }
+
+    /* Bottom tab bar */
+    .bottom-tab {
+      background: #fff;
+      border-top: 1px solid var(--gray);
+      display: flex;
+      padding: 8px 0 14px;
+    }
+    .bottom-tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      padding: 4px 0;
+      transition: opacity .15s;
+    }
+    .bottom-tab-item:hover { opacity: .7; }
+    .tab-icon { font-size: 20px; }
+    .tab-label { font-size: 11px; color: var(--text-light); }
+    .bottom-tab-item.active .tab-label { color: var(--rabbit); font-weight: 600; }
+
+    /* Info row */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--bg-light);
+    }
+    .info-row .ik { font-size: 13px; color: var(--text-light); }
+    .info-row .iv { font-size: 13px; color: var(--text-med); font-weight: 500; text-align: right; max-width: 55%; }
+
+    /* Notch */
+    .notch {
+      background: #000;
+      width: 120px; height: 28px;
+      border-radius: 0 0 18px 18px;
+      margin: 0 auto;
+      position: absolute;
+      top: 0; left: 50%; transform: translateX(-50%);
+      z-index: 10;
+    }
+
+    /* Scroll hint */
+    .scroll-hint { text-align: center; font-size: 11px; color: var(--text-light); padding: 4px; }
+
+    /* Race track canvas card */
+    .race-card {
+      background: #1a2a1a;
+      border: 2px solid var(--turtle);
+      border-radius: var(--border-r);
+      padding: 10px 10px 8px;
+      box-shadow: 3px 3px 0 rgba(0,0,0,.15);
+    }
+    .race-card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #C9E4A6;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+    #race-canvas {
+      display: block;
+      width: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border-radius: 4px;
+    }
+    .race-legend {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      padding: 0 2px;
+    }
+    .race-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .legend-dot {
+      width: 8px; height: 8px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>🐰🐢 Hopit MVP 프리뷰</h1>
+  <p>토끼 vs 거북이 — 러닝 습관 경주 앱</p>
+</div>
+
+<!-- SCREEN TABS -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showScreen('onboarding', this)">① 온보딩</button>
+  <button class="tab-btn" onclick="showScreen('settings', this)">② 경주 설정</button>
+  <button class="tab-btn" onclick="showScreen('home', this)">③ 홈</button>
+  <button class="tab-btn" onclick="showScreen('auth', this)">④ 인증 선택</button>
+  <button class="tab-btn" onclick="showScreen('gps', this)">⑤ GPS</button>
+  <button class="tab-btn" onclick="showScreen('photo', this)">⑥ 사진 인증</button>
+  <button class="tab-btn" onclick="showScreen('stats', this)">⑦ 통계</button>
+  <button class="tab-btn" onclick="showScreen('result', this)">⑧ 결과</button>
+</div>
+
+<!-- PHONE -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="status-bar" style="padding-top:32px">
+      <span>9:41</span>
+      <span>▲ 🔋</span>
+    </div>
+
+    <!-- ===================== SCREEN: ONBOARDING ===================== -->
+    <div class="screen active" id="screen-onboarding">
+      <div class="screen-inner" style="justify-content: space-between; padding: 24px 24px 32px;">
+        <div class="ob-center">
+          <div class="ob-emoji">🐰 🐢</div>
+          <div class="ob-title">토끼 vs 거북이</div>
+          <div class="ob-sub">러닝 습관 경주 게임</div>
+
+          <div class="card beige" style="width:100%; margin-top:8px;">
+            <div class="ob-desc">매일 러닝을 인증하고<br>토끼가 거북이를 이기세요!</div>
+          </div>
+
+          <div class="feature-list" style="margin-top:8px; padding: 0 8px;">
+            <div class="feature-item">✓ GPS 또는 사진으로 인증</div>
+            <div class="feature-item">✓ 실시간 진행 현황 추적</div>
+            <div class="feature-item">✓ 50% 기준으로 우승자 판정</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="margin-top:24px;">시작하기</button>
+      </div>
+    </div>
+
+    <!-- ===================== SCREEN: SETTINGS ===================== -->
+    <div class="screen" id="screen-settings">
+      <div class="header-bar"><span class="title">경주 설정</span></div>
+      <div class="screen-inner">
+        <!-- 기간 -->
+        <div class="card">
+          <div class="section-title">⏰ 경주 기간</div>
+          <div class="date-row">
+            <button class="date-btn">2026. 5. 12.</button>
+            <span class="date-sep">~</span>
+            <button class="date-btn">2026. 6. 11.</button>
+          </div>
+        </div>
+
+        <!-- 주간 목표 -->
+        <div class="card">
+          <div class="section-title">🎯 주간 목표</div>
+          <div class="section-hint">일주일에 몇 회 인증?</div>
+          <div class="goal-btns">
+            <button class="goal-btn">3회</button>
+            <button class="goal-btn selected">5회</button>
+            <button class="goal-btn">7회</button>
+          </div>
+          <input class="text-input" type="number" value="5" placeholder="직접 입력" />
+        </div>
+
+        <!-- 인증 방법 -->
+        <div class="card">
+          <div class="section-title">✓ 인증 방법</div>
+          <div class="check-row">
+            <div class="check-box checked"></div>
+            <span style="font-size:14px;color:var(--text-med);">📍 GPS 자동 인증</span>
+          </div>
+          <div class="check-row">
+            <div class="check-box checked"></div>
+            <span style="font-size:14px;color:var(--text-med);">📸 사진 인증</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary">경주 시작</button>
+      </div>
+    </div>
+
+    <!-- ===================== SCREEN: HOME ===================== -->
+    <div class="screen" id="screen-home">
+      <div class="header-bar"><span class="title">홈</span></div>
+      <div class="screen-inner">
+
+        <!-- 픽셀 아트 경주 트랙 -->
+        <div class="race-card">
+          <div class="race-card-title">🏁 실시간 경주 현황</div>
+          <canvas id="race-canvas" width="311" height="130"></canvas>
+          <div class="race-legend">
+            <div class="race-legend-item">
+              <div class="legend-dot" style="background:#F5EFE6; border:1px solid #888;"></div>
+              <span style="color:#C9E4A6;">🐰 토끼 (나) — 68%</span>
+            </div>
+            <div class="race-legend-item">
+              <div class="legend-dot" style="background:#5D8F3F;"></div>
+              <span style="color:#C9E4A6;">🐢 거북이 — 52%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 헤더 카드 -->
+        <div class="card beige">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:16px; font-weight:700; color:var(--text-dark);">🏁 경주 진행중</div>
+              <div style="font-size:12px; color:var(--brown); margin-top:4px;">경주 진행중 · 남은 30일 (1/31)</div>
+            </div>
+            <div class="badge">🔥 1일</div>
+          </div>
+        </div>
+
+        <!-- 거북이 경고 -->
+        <div class="card warning">
+          <div style="font-size:14px; font-weight:600; color:var(--carrot);">거북이가 따라오고 있어요 🐢</div>
+          <div style="font-size:12px; color:var(--text-light); margin-top:4px;">Hop하세요!</div>
+        </div>
+
+        <!-- 토끼 진행 -->
+        <div class="card success">
+          <div class="progress-wrap">
+            <div class="progress-label-row">
+              <span class="progress-label">🐰 토끼 (당신)</span>
+              <span class="progress-val" style="color:var(--rabbit);">68%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill rabbit" style="width:68%;"></div>
+            </div>
+            <div class="progress-detail">17/25회 인증 완료</div>
+          </div>
+        </div>
+
+        <!-- 거북이 진행 -->
+        <div class="card">
+          <div class="progress-wrap">
+            <div class="progress-label-row">
+              <span class="progress-label">🐢 거북이 (고정 속도)</span>
+              <span class="progress-val" style="color:var(--turtle);">52%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill turtle" style="width:52%;"></div>
+            </div>
+            <div class="progress-detail">13/25회 기대치</div>
+          </div>
+        </div>
+
+        <!-- 통계 3개 -->
+        <div class="card">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="big rabbit">17</div>
+              <div class="lbl">완료</div>
+            </div>
+            <div class="stat-item">
+              <div class="big dark">25</div>
+              <div class="lbl">목표</div>
+            </div>
+            <div class="stat-item">
+              <div class="big turtle">30</div>
+              <div class="lbl">남은 일수</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary">+ 러닝 인증하기</button>
+        <button class="btn btn-secondary">📊 상세 통계 보기</button>
+        <div style="text-align:center; font-size:12px; color:var(--brown); text-decoration:underline; padding:4px 0; cursor:pointer;">↻ 새로고침</div>
+      </div>
+
+      <!-- bottom tab -->
+      <div class="bottom-tab">
+        <div class="bottom-tab-item active"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="bottom-tab-item"><span class="tab-icon">✓</span><span class="tab-label">인증</span></div>
+        <div class="bottom-tab-item"><span class="tab-icon">📊</span><span class="tab-label">통계</span></div>
+        <div class="bottom-tab-item"><span class="tab-icon">⚙️</span><span class="tab-label">설정</span></div>
+      </div>
+    </div>
+
+    <!-- ===================== SCREEN: AUTH CHOICE ===================== -->
+    <div class="screen" id="screen-auth">
+      <div class="header-bar"><span class="title">인증</span></div>
+      <div class="screen-inner" style="justify-content:center;">
+        <div style="font-size:22px; font-weight:700; color:var(--text-dark); text-align:center; margin-bottom:8px;">인증 방법 선택</div>
+
+        <div class="card success auth-card">
+          <div class="auth-emoji">🗺️</div>
+          <div class="auth-title">GPS 자동 인증</div>
+          <div class="auth-desc">실시간 위치 기반 인식</div>
+          <div class="auth-req">최소 거리: 3km</div>
+          <button class="btn btn-primary">GPS 시작</button>
+        </div>
+
+        <div class="card auth-card">
+          <div class="auth-emoji">📸</div>
+          <div class="auth-title">사진 인증</div>
+          <div class="auth-desc">러닝 인증샷 업로드</div>
+          <div class="auth-req">언제든지 인증 가능</div>
+          <button class="btn btn-secondary">사진 선택</button>
+        </div>
+      </div>
+
+      <div class="bottom-tab">
+        <div class="bottom-tab-item"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="bottom-tab-item active"><span class="tab-icon">✓</span><span class="tab-label">인증</span></div>
+        <div class="bottom-tab-item"><span class="tab-icon">📊</span><span class="tab-label">통계</span></div>
+        <div class="bottom-tab-item"><span class="tab-icon">⚙️</span><span class="tab-label">설정</span></div>
+      </div>
+    </div>
+
+    <!-- ===================== SCREEN: GPS ===================== -->
+    <div class="screen" id="screen-gps">
+      <div class="header-bar">
+        <span class="title">🗺️ GPS 맵 추적</span>
+      </div>
+      <div class="screen-inner">
+        <!-- 지도 영역 -->
+        <div class="map-placeholder">
+          <div class="map-icon">📍</div>
+          <div class="map-txt">🗺️ GPS 추적 중...</div>
+          <div style="font-size:12px; color:var(--turtle); opacity:.7;">위치 권한 허용 후 활성화</div>
+        </div>
+
+        <!-- 거리 / 시간 -->
+        <div class="card">
+          <div class="gps-stats">
+            <div class="gps-stat">
+              <div class="val" style="color:var(--rabbit);">2.31</div>
+              <div class="lbl">현재 거리 (km)</div>
+            </div>
+            <div class="gps-stat">
+              <div class="val">18:42</div>
+              <div class="lbl">예상 시간</div>
+            </div>
+            <div class="gps-stat">
+              <div class="val" style="color:var(--turtle);">추적중</div>
+              <div class="lbl">상태</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 최소 거리 안내 -->
+        <div class="card warning">
+          <div style="font-size:13px; color:var(--carrot); font-weight:600;">최소 3km 이상 달려야 인증이 완료됩니다.</div>
+          <div style="font-size:11px; color:var(--text-light); margin-top:4px;">현재 2.31km — 0.69km 더 달리세요!</div>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" style="flex:1;">⏹ 중지</button>
+          <button class="btn btn-primary" style="flex:2; opacity:.5;" disabled>✓ 인증 완료 (3km 미만)</button>
+        </div>
+        <button class="btn btn-outline">← 돌아가기</button>
+      </div>
+    </div>
+
+    <!-- ===================== SCREEN: PHOTO ===================== -->
+    <div class="screen" id="screen-photo">
+      <div class="header-bar"><span class="title">📸 사진 인증</span></div>
+      <div class="screen-inner">
+        <!-- 사진 영역 -->
+        <div class="photo-area">
+          <div class="ph-icon">📸</div>
+          <div class="ph-txt">사진을 선택하세요</div>
+        </div>
+
+        <!-- 버튼 -->
+        <div class="photo-btns">
+          <button class="btn btn-secondary">📷 촬영</button>
+          <button class="btn btn-outline">🖼️ 갤러리</button>
+        </div>
+
+        <!-- 메모 -->
+        <div class="card">
+          <div class="section-title">인증 정보 (선택)</div>
+          <input class="text-input" type="text" placeholder="예: 공원 3km 러닝" />
+        </div>
+
+        <button class="btn btn-primary">✓ 인증하기</button>
+        <button class="btn btn-outline">← 돌아가기</button>
+      </div>
+    </div>
+
+    <!-- ===================== SCREEN: STATS ===================== -->
+    <div class="screen" id="screen-stats">
+      <div class="header-bar"><span class="title">통계</span></div>
+      <div class="screen-inner">
+        <div style="font-size:20px; font-weight:700; color:var(--text-dark); text-align:center;">📊 통계</div>
+
+        <!-- 전체 통계 -->
+        <div class="card">
+          <div class="stat-row"><span class="key">총 인증</span><span class="val">17회</span></div>
+          <div class="stat-row"><span class="key">목표</span><span class="val">25회</span></div>
+          <div class="stat-row"><span class="key">진행률</span><span class="val highlight">68%</span></div>
+          <div class="stat-row"><span class="key">경과 일수</span><span class="val">1/31일</span></div>
+        </div>
+
+        <!-- 진행률 바 -->
+        <div class="card success">
+          <div class="progress-wrap">
+            <div class="progress-label-row">
+              <span class="progress-label">🐰 토끼</span>
+              <span class="progress-val" style="color:var(--rabbit);">68%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill rabbit" style="width:68%;"></div>
+            </div>
+            <div class="progress-detail">목표 25회 중 17회</div>
+          </div>
+        </div>
+
+        <!-- 주간 차트 -->
+        <div class="card">
+          <div class="section-title">주간 완료</div>
+          <div class="weekly-chart">
+            <div class="weekly-col">
+              <div class="weekly-bar" style="height:72px; background:var(--rabbit);"></div>
+              <span class="weekly-day">월</span>
+            </div>
+            <div class="weekly-col">
+              <div class="weekly-bar" style="height:72px; background:var(--rabbit);"></div>
+              <span class="weekly-day">화</span>
+            </div>
+            <div class="weekly-col">
+              <div class="weekly-bar" style="height:12px; background:var(--gray);"></div>
+              <span class="weekly-day">수</span>
+            </div>
+            <div class="weekly-col">
+              <div class="weekly-bar" style="height:72px; background:var(--rabbit);"></div>
+              <span class="weekly-day">목</span>
+            </div>
+            <div class="weekly-col">
+              <div class="weekly-bar" style="height:72px; background:var(--rabbit);"></div>
+              <span class="weekly-day">금</span>
+            </div>
+            <div class="weekly-col">
+              <div class="weekly-bar" style="height:12px; background:var(--gray);"></div>
+              <span class="weekly-day">토</span>
+            </div>
+            <div class="weekly-col">
+              <div class="weekly-bar" style="height:12px; background:var(--gray);"></div>
+              <span class="weekly-day">일</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 경주 정보 -->
+        <div class="card">
+          <div class="section-title">경주 정보</div>
+          <div class="info-row">
+            <span class="ik">기간</span>
+            <span class="iv">2026. 5. 12. ~ 2026. 6. 11.</span>
+          </div>
+          <div class="info-row">
+            <span class="ik">주간 목표</span>
+            <span class="iv">5회</span>
+          </div>
+          <div class="info-row" style="border-bottom:none;">
+            <span class="ik">인증 방법</span>
+            <span class="iv">📍 GPS, 📸 사진</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-tab">
+        <div class="bottom-tab-item"><span class="tab-icon">🏠</span><span class="tab-label">홈</span></div>
+        <div class="bottom-tab-item"><span class="tab-icon">✓</span><span class="tab-label">인증</span></div>
+        <div class="bottom-tab-item active"><span class="tab-icon">📊</span><span class="tab-label">통계</span></div>
+        <div class="bottom-tab-item"><span class="tab-icon">⚙️</span><span class="tab-label">설정</span></div>
+      </div>
+    </div>
+
+    <!-- ===================== SCREEN: RESULT ===================== -->
+    <div class="screen" id="screen-result">
+      <div class="header-bar"><span class="title">경주 결과</span></div>
+      <div class="screen-inner">
+        <!-- 축하 -->
+        <div class="card celebration" style="padding:24px 16px;">
+          <div class="result-center">
+            <div class="result-confetti">🎉</div>
+            <div class="result-title">경주 종료!</div>
+          </div>
+        </div>
+
+        <!-- 우승자 -->
+        <div class="card success" style="padding:24px 16px;">
+          <div class="result-center">
+            <div class="winner-emoji">🐰</div>
+            <div class="winner-text">이번 레이스의 승자는 토끼입니다 🐰</div>
+            <div class="final-rate">최종 진행률: 68.0%</div>
+            <div class="progress-wrap" style="width:100%;">
+              <div class="progress-track">
+                <div class="progress-fill rabbit" style="width:68%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 연속 달성 배지 -->
+        <div class="card warning" style="text-align:center; padding:16px;">
+          <div class="badge" style="margin-bottom:10px;">🔥 3일 연속</div>
+          <div style="font-size:16px; font-weight:600; color:var(--carrot); margin-bottom:4px;">3일 연속 Hop 성공!</div>
+          <div style="font-size:13px; color:var(--text-light);">계속해봐요!</div>
+        </div>
+
+        <!-- 최종 통계 -->
+        <div class="card">
+          <div class="stat-row"><span style="font-size:14px;color:var(--text-dark);">🐰 토끼 (당신)</span><span class="val" style="color:var(--rabbit);">68.0%</span></div>
+          <div class="stat-row"><span style="font-size:14px;color:var(--text-dark);">🐢 거북이</span><span class="val" style="color:var(--turtle);">50%</span></div>
+          <div style="font-size:11px; color:var(--text-light); text-align:center; padding-top:8px;">50% 이상: 토끼 승리 | 50%: 비김 | 50% 미만: 거북이 승리</div>
+        </div>
+
+        <button class="btn btn-primary">새 경주 시작하기</button>
+        <button class="btn btn-secondary">홈으로</button>
+      </div>
+    </div>
+
+  </div><!-- /phone -->
+</div><!-- /phone-wrap -->
+
+<script>
+  /* ============================================= */
+  function getTimeTheme() {
+    const h = new Date().getHours();
+    let period, label;
+    if      (h >= 20 || h < 4)  { period = 'night';   label = '밤'; }
+    else if (h < 6)              { period = 'dawn';    label = '새벽'; }
+    else if (h < 11)             { period = 'morning'; label = '아침'; }
+    else if (h < 17)             { period = 'noon';    label = '점심'; }
+    else                         { period = 'evening'; label = '저녁'; }
+
+    const themes = {
+      /* 밤 ── 짙은 네이비, 별, 초승달 */
+      night: {
+        skyTop: '#060D1A', skyBot: '#1C3A5E',
+        starCount: 10, moonShow: true,  sunShow: false,
+        moonColor: '#FFFDE7', moonCutout: '#060D1A',
+        hillFar: '#0D2008', hillNear: '#1A3010',
+        grassTop: '#2D5016', grassBot: '#1A3010',
+        trackFill: '#7A5E2A', trackHigh: '#9A7A42', trackLow: '#4A3810',
+        trackLine: '#8A6C32',
+        treeLeaf: '#1A3010', treeLight: '#2D5016',
+        labelFg: '#C9E4A6', labelBg: 'rgba(6,13,26,0.82)',
+        badgeBg: 'rgba(6,13,26,0.70)', badgeFg: '#7BAFD4',
+      },
+      /* 새벽 ── 보라→분홍, 별 조금, 달 희미 */
+      dawn: {
+        skyTop: '#0E0520', skyBot: '#F2A0C0',
+        starCount: 4, moonShow: true,  sunShow: false,
+        moonColor: '#DDA8C8', moonCutout: '#0E0520',
+        hillFar: '#1A1428', hillNear: '#2A2040',
+        grassTop: '#2D4020', grassBot: '#1E2A14',
+        trackFill: '#7A5828', trackHigh: '#9A7040', trackLow: '#4A3010',
+        trackLine: '#8A6030',
+        treeLeaf: '#1A2810', treeLight: '#263C18',
+        labelFg: '#F2C8D8', labelBg: 'rgba(14,5,32,0.82)',
+        badgeBg: 'rgba(14,5,32,0.70)', badgeFg: '#F2A0C0',
+      },
+      /* 아침 ── 주황→파랑, 오른쪽 낮은 태양 */
+      morning: {
+        skyTop: '#3A7AC4', skyBot: '#FF8040',
+        starCount: 0, moonShow: false, sunShow: true,
+        sunNx: 0.82, sunNy: 0.72, sunCore: '#FF8C00', sunGlow: '#FFD060',
+        hillFar: '#3A6828', hillNear: '#4A7A2F',
+        grassTop: '#6AAA48', grassBot: '#4A8030',
+        trackFill: '#C4A058', trackHigh: '#D4B06A', trackLow: '#8A6828',
+        trackLine: '#C8A860',
+        treeLeaf: '#3A6828', treeLight: '#5A8A40',
+        labelFg: '#2D3A10', labelBg: 'rgba(255,240,200,0.90)',
+        badgeBg: 'rgba(255,200,80,0.80)', badgeFg: '#5A3800',
+      },
+      /* 점심 ── 맑은 파랑, 태양 정중앙 상단 */
+      noon: {
+        skyTop: '#1A6FD4', skyBot: '#C8EFFE',
+        starCount: 0, moonShow: false, sunShow: true,
+        sunNx: 0.50, sunNy: 0.10, sunCore: '#FFE033', sunGlow: '#FFF9AA',
+        hillFar: '#4A7A2F', hillNear: '#6AAA48',
+        grassTop: '#8FBC5A', grassBot: '#6AAA48',
+        trackFill: '#C4A058', trackHigh: '#D4B86A', trackLow: '#8A6828',
+        trackLine: '#CCAA60',
+        treeLeaf: '#4A7A2F', treeLight: '#6AAA48',
+        labelFg: '#1A3008', labelBg: 'rgba(255,255,230,0.92)',
+        badgeBg: 'rgba(200,240,255,0.80)', badgeFg: '#1A6FD4',
+      },
+      /* 저녁 ── 붉은 오렌지→파랑, 왼쪽 낮은 석양 */
+      evening: {
+        skyTop: '#2A5070', skyBot: '#E8420A',
+        starCount: 2, moonShow: false, sunShow: true,
+        sunNx: 0.12, sunNy: 0.74, sunCore: '#E85D04', sunGlow: '#F77F00',
+        hillFar: '#1A2A10', hillNear: '#2D4018',
+        grassTop: '#3A6020', grassBot: '#28401A',
+        trackFill: '#9A6828', trackHigh: '#B08040', trackLow: '#5A3A10',
+        trackLine: '#A87030',
+        treeLeaf: '#1A2A10', treeLight: '#2D4018',
+        labelFg: '#FFD080', labelBg: 'rgba(40,20,0,0.82)',
+        badgeBg: 'rgba(40,20,0,0.70)', badgeFg: '#FCBF49',
+      },
+    };
+
+    return { period, label, t: themes[period] };
+  }
+
+  /* =============================================
+     PIXEL ART RACE TRACK RENDERER
+  ============================================= */
+  function drawRaceCanvas(rabbitPct, turtlePct) {
+    const canvas = document.getElementById('race-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    const W = canvas.width;   // 311
+    const H = canvas.height;  // 110
+    const S = 3;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const { period, label, t } = getTimeTheme();
+
+    const SKY_H  = 56;
+    const TRACK_Y = 62;
+    const TRACK_H = 32;
+
+    /* === SKY ================================================= */
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, SKY_H);
+    skyGrad.addColorStop(0, t.skyTop);
+    skyGrad.addColorStop(1, t.skyBot);
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, SKY_H);
+
+    /* === STARS =============================================== */
+    const STAR_POS = [[20,7],[58,3],[96,13],[148,5],[198,9],[248,4],[288,11],[34,17],[126,2],[238,15]];
+    if (t.starCount > 0) {
+      ctx.fillStyle = '#FFFFFF';
+      STAR_POS.slice(0, t.starCount).forEach(([x,y]) => ctx.fillRect(x, y, 2, 2));
+      if (t.starCount >= 8) {
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        [[78,9],[168,6],[218,13],[44,4]].forEach(([x,y]) => ctx.fillRect(x, y, 1, 1));
+      }
+    }
+
+    /* === MOON ================================================ */
+    if (t.moonShow) {
+      ctx.fillStyle = t.moonColor;
+      ctx.fillRect(264, 5, 14, 14);
+      ctx.fillStyle = t.moonCutout;
+      ctx.fillRect(268, 3, 14, 14);
+      /* faint halo */
+      ctx.fillStyle = t.moonColor + '28';
+      ctx.fillRect(260, 2, 22, 20);
+    }
+
+    /* === SUN ================================================= */
+    if (t.sunShow) {
+      const sx = Math.round(t.sunNx * W);
+      const sy = Math.round(t.sunNy * SKY_H);
+      const isLow = t.sunNy > 0.55;
+      const R = isLow ? 9 : 6;
+
+      /* horizon glow for low sun */
+      if (isLow) {
+        const hg = ctx.createRadialGradient(sx, SKY_H, 0, sx, SKY_H, 70);
+        hg.addColorStop(0, t.sunGlow + '70');
+        hg.addColorStop(1, t.sunGlow + '00');
+        ctx.fillStyle = hg;
+        ctx.fillRect(Math.max(0, sx - 70), 30, 140, SKY_H - 30);
+      }
+
+      /* glow disc */
+      ctx.fillStyle = t.sunGlow + '50';
+      ctx.beginPath(); ctx.arc(sx, sy, R + 6, 0, Math.PI*2); ctx.fill();
+
+      /* outer disc */
+      ctx.fillStyle = t.sunGlow;
+      ctx.beginPath(); ctx.arc(sx, sy, R + 2, 0, Math.PI*2); ctx.fill();
+
+      /* core */
+      ctx.fillStyle = t.sunCore;
+      ctx.beginPath(); ctx.arc(sx, sy, R, 0, Math.PI*2); ctx.fill();
+
+      /* pixel rays (noon/morning only) */
+      if (!isLow) {
+        ctx.fillStyle = t.sunGlow;
+        [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx,dy]) => {
+          ctx.fillRect(sx + dx*(R+3), sy + dy*(R+3), 3, 3);
+        });
+      }
+    }
+
+    /* === DISTANT HILLS ======================================= */
+    [
+      {cx:50, cy:52, rx:60, ry:14},
+      {cx:120,cy:48, rx:75, ry:17},
+      {cx:200,cy:50, rx:80, ry:15},
+      {cx:280,cy:49, rx:55, ry:13},
+    ].forEach(h => {
+      ctx.fillStyle = t.hillFar;
+      ctx.beginPath();
+      ctx.ellipse(h.cx, h.cy + h.ry, h.rx, h.ry, 0, Math.PI, 0);
+      ctx.fill();
+    });
+    /* nearer hills */
+    [
+      {cx:40, cy:58, rx:52, ry:10},
+      {cx:272,cy:57, rx:55, ry:11},
+    ].forEach(h => {
+      ctx.fillStyle = t.hillNear;
+      ctx.beginPath();
+      ctx.ellipse(h.cx, h.cy + h.ry, h.rx, h.ry, 0, Math.PI, 0);
+      ctx.fill();
+    });
+
+    /* === GRASS =============================================== */
+    ctx.fillStyle = t.grassTop;
+    ctx.fillRect(0, 55, W, 8);
+    ctx.fillStyle = t.grassBot;
+    ctx.fillRect(0, 60, W, H - 60);
+
+    /* === TRACK =============================================== */
+    ctx.fillStyle = t.trackFill;
+    ctx.fillRect(0, TRACK_Y, W, TRACK_H);
+    /* highlight stripe */
+    ctx.fillStyle = t.trackHigh;
+    ctx.fillRect(0, TRACK_Y + 2,  W, 2);
+    ctx.fillRect(0, TRACK_Y + 14, W, 2);
+    ctx.fillRect(0, TRACK_Y + 28, W, 2);
+    /* dashed center */
+    for (let x = 0; x < W; x += 18) {
+      ctx.fillStyle = t.trackLine;
+      ctx.fillRect(x, TRACK_Y + 15, 10, 2);
+    }
+    /* border */
+    ctx.fillStyle = t.trackLow;
+    ctx.fillRect(0, TRACK_Y, W, 3);
+    ctx.fillRect(0, TRACK_Y + TRACK_H - 3, W, 3);
+
+    /* === LOWER GRASS ========================================= */
+    ctx.fillStyle = t.grassBot;
+    ctx.fillRect(0, TRACK_Y + TRACK_H, W, H - (TRACK_Y + TRACK_H));
+    for (let x = 5; x < W; x += 20) {
+      ctx.fillStyle = t.grassTop;
+      ctx.fillRect(x,   TRACK_Y + TRACK_H,     2, 4);
+      ctx.fillRect(x+4, TRACK_Y + TRACK_H,     2, 3);
+    }
+
+    /* === PIXEL TREES ========================================= */
+    function drawTree(tx, ty) {
+      ctx.fillStyle = '#5C3A1E';
+      ctx.fillRect(tx+4, ty+14, 4, 10);
+      ctx.fillStyle = t.treeLeaf;
+      ctx.fillRect(tx+2, ty+8,  8, 8);
+      ctx.fillRect(tx,   ty+4, 12, 8);
+      ctx.fillRect(tx+2, ty,    8, 6);
+      ctx.fillStyle = t.treeLight;
+      ctx.fillRect(tx+3, ty+5,  6, 4);
+      ctx.fillRect(tx+4, ty+1,  4, 4);
+    }
+    drawTree(0,   37);
+    drawTree(18,  39);
+    drawTree(W-22,35);
+
+    /* === RACE POSITIONS ====================================== */
+    const MARGIN_L = 30, MARGIN_R = 30;
+    const TRACK_LEN = W - MARGIN_L - MARGIN_R;
+    const rabbitX = Math.round(MARGIN_L + TRACK_LEN * rabbitPct);
+    const turtleX = Math.round(MARGIN_L + TRACK_LEN * turtlePct);
+
+    /* --- TURTLE SPRITE ---
+       0=transparent 1=shell(#5D8F3F) 2=shellDark(#3d6b2a)
+       3=body(#7FB069) 5=eye(#1a1a1a) 6=belly(#A8D880)        */
+    const TROWS = [
+      [0,0,1,1,1,0,0,0],
+      [0,1,1,1,1,1,0,0],
+      [3,1,2,1,2,1,3,0],
+      [3,1,1,1,1,1,3,0],
+      [3,1,2,1,2,1,3,0],
+      [0,1,1,1,1,1,0,0],
+      [3,0,6,6,6,0,3,0],
+      [0,0,3,3,3,0,0,0],
+      [0,0,3,5,3,0,0,0],
+    ];
+    const TPAL = [null,'#5D8F3F','#3d6b2a','#7FB069','#7FB069','#1a1a1a','#A8D880'];
+    const tSW = TROWS[0].length * S, tSH = TROWS.length * S;
+    const tOX = turtleX - Math.round(tSW / 2);
+    const tOY = TRACK_Y - tSH + 4;
+    TROWS.forEach((row, ry) => row.forEach((px, rx) => {
+      if (px) { ctx.fillStyle = TPAL[px]; ctx.fillRect(tOX+rx*S, tOY+ry*S, S, S); }
+    }));
+
+    /* --- RABBIT SPRITE ---
+       0=transparent 1=body(#F5EFE6) 2=ear(#D4C4B0)
+       3=eye(#333) 4=nose(#FF9BA0) 5=shadow(#D8CFC4)           */
+    const RROWS = [
+      [0,2,0,2,0,0,0,0,0,0],
+      [0,2,2,2,0,0,0,0,0,0],
+      [0,0,1,1,1,1,0,0,0,0],
+      [0,1,1,1,1,1,1,0,0,0],
+      [0,1,3,1,1,1,1,1,0,0],
+      [0,1,1,4,1,1,1,1,0,0],
+      [0,0,1,1,1,1,1,5,0,0],
+      [0,0,1,5,0,0,1,0,0,0],
+      [0,1,1,0,0,0,1,1,0,0],
+    ];
+    const RPAL = [null,'#F5EFE6','#D4C4B0','#333333','#FF9BA0','#D8CFC4'];
+    const rSW = RROWS[0].length * S, rSH = RROWS.length * S;
+    const rOX = rabbitX - Math.round(rSW * 0.45);
+    const rOY = TRACK_Y - rSH + 4;
+    RROWS.forEach((row, ry) => row.forEach((px, rx) => {
+      if (px) { ctx.fillStyle = RPAL[px]; ctx.fillRect(rOX+rx*S, rOY+ry*S, S, S); }
+    }));
+
+    /* --- DUST (rabbit motion) --- */
+    ctx.fillStyle = 'rgba(200,170,110,0.55)';
+    ctx.fillRect(rOX - 4, TRACK_Y - 7, 7, 3);
+    ctx.fillRect(rOX - 7, TRACK_Y - 5, 5, 2);
+    ctx.fillRect(rOX - 5, TRACK_Y - 3, 3, 2);
+
+    /* --- SHADOW --- */
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    ctx.fillRect(turtleX-13, TRACK_Y-2, 26, 3);
+    ctx.fillRect(rabbitX-11, TRACK_Y-2, 22, 3);
+
+    /* === FLAGS =============================================== */
+    /* START (left) */
+    ctx.fillStyle = '#4A3010';
+    ctx.fillRect(MARGIN_L - 13, TRACK_Y - 28, 2, 38);
+    ['#E74C3C','#FFFFFF','#E74C3C','#FFFFFF'].forEach((c, i) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(MARGIN_L - 11, TRACK_Y - 28 + i*5, 14, 5);
+    });
+    ctx.fillStyle = t.labelFg;
+    ctx.font = 'bold 7px monospace';
+    ctx.fillText('START', MARGIN_L - 17, TRACK_Y - 30);
+
+    /* GOAL (right) */
+    ctx.fillStyle = '#4A3010';
+    ctx.fillRect(W - MARGIN_R + 11, TRACK_Y - 28, 2, 38);
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 3; col++) {
+        ctx.fillStyle = (row+col) % 2 === 0 ? '#111' : '#FFF';
+        ctx.fillRect(W - MARGIN_R + 13 + col*5, TRACK_Y - 28 + row*5, 5, 5);
+      }
+    }
+    ctx.fillStyle = t.labelFg;
+    ctx.font = 'bold 7px monospace';
+    ctx.fillText('GOAL', W - MARGIN_R + 5, TRACK_Y - 30);
+
+    /* === % LABELS =========================================== */
+    function drawPctLabel(x, y, text, fgColor) {
+      ctx.font = 'bold 9px monospace';
+      const tw = ctx.measureText(text).width;
+      ctx.fillStyle = t.labelBg;
+      ctx.fillRect(x - 3, y - 11, tw + 6, 13);
+      ctx.fillStyle = fgColor;
+      ctx.fillText(text, x, y);
+    }
+    const overlap = Math.abs(rabbitX - turtleX) < 44;
+    const rLX = Math.min(Math.max(rOX,     4), W - 44);
+    const tLX = Math.min(Math.max(tOX,     4), W - 44);
+    drawPctLabel(rLX, rOY - 4,             Math.round(rabbitPct*100) + '%', '#F5EFE6');
+    drawPctLabel(tLX, overlap ? rOY-17 : rOY-4, Math.round(turtlePct*100) + '%', '#A8D880');
+
+    /* === TIME-OF-DAY BADGE (top-right) ====================== */
+    const badgeLabel = label;
+    ctx.font = '600 8px sans-serif';
+    const bw = ctx.measureText(badgeLabel).width + 10;
+    ctx.fillStyle = t.badgeBg;
+    ctx.fillRect(W - bw - 2, 3, bw, 14);
+    ctx.fillStyle = t.badgeFg;
+    ctx.fillText(badgeLabel, W - bw + 3, 13);
+
+    /* update HTML legend label */
+    const el = document.getElementById('time-label');
+    if (el) el.textContent = label;
+  }
+
+  /* =============================================
+     SCREEN SWITCHER
+  ============================================= */
+  function showScreen(name, btn) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+    btn.classList.add('active');
+    document.getElementById('screen-' + name).scrollTop = 0;
+    if (name === 'home') drawRaceCanvas(0.68, 0.52);
+  }
+
+  window.addEventListener('load', () => drawRaceCanvas(0.68, 0.52));
+</script>
+</body>
+</html>
