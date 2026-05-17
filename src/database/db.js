@@ -1,121 +1,109 @@
-import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 
 const DATABASE_NAME = 'rabbitVsTurtle.db';
 
-let db = null;
+// ── Web: localStorage 기반 인메모리 스토어 ──────────────────────────
+const STORAGE_KEY = 'hopit_web_db';
+let webStore = null;
 
-/**
- * 데이터베이스 초기화
- */
+function loadWebStore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { races: [], authentications: [], daily_progress: [] };
+}
+
+export function persistStore() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(webStore));
+  } catch {}
+}
+
+// ── Native: SQLite ────────────────────────────────────────────────
+let sqliteDb = null;
+
+const CREATE_TABLES_SQL = `
+  CREATE TABLE IF NOT EXISTS races (
+    raceId TEXT PRIMARY KEY,
+    startDate TEXT NOT NULL,
+    endDate TEXT NOT NULL,
+    weeklyGoal INTEGER NOT NULL,
+    authMethodGPS BOOLEAN DEFAULT 1,
+    authMethodPhoto BOOLEAN DEFAULT 1,
+    status TEXT CHECK(status IN ('active','completed','abandoned')) DEFAULT 'active',
+    finalResult TEXT CHECK(finalResult IN ('rabbit','turtle','tie','pending')) DEFAULT 'pending',
+    completionRate REAL DEFAULT 0.0,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS authentications (
+    authId TEXT PRIMARY KEY,
+    raceId TEXT NOT NULL REFERENCES races(raceId) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK(type IN ('gps','photo')),
+    distance REAL, duration INTEGER,
+    startLat REAL, startLng REAL, endLat REAL, endLng REAL,
+    photoPath TEXT, photoTimestamp TEXT, memo TEXT,
+    timestamp TEXT NOT NULL, createdAt TEXT NOT NULL,
+    isValid BOOLEAN DEFAULT 1, validatedAt TEXT
+  );
+  CREATE TABLE IF NOT EXISTS daily_progress (
+    progressId TEXT PRIMARY KEY,
+    raceId TEXT NOT NULL REFERENCES races(raceId) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    rabbitDistance REAL DEFAULT 0.0, rabbitCount INTEGER DEFAULT 0,
+    turtleExpectedDistance REAL DEFAULT 0.0, turtleExpectedCount INTEGER DEFAULT 0,
+    completionRate REAL DEFAULT 0.0,
+    createdAt TEXT NOT NULL, updatedAt TEXT NOT NULL,
+    UNIQUE(raceId, date)
+  );
+  CREATE INDEX IF NOT EXISTS idx_races_status ON races(status);
+  CREATE INDEX IF NOT EXISTS idx_auth_raceId ON authentications(raceId);
+  CREATE INDEX IF NOT EXISTS idx_auth_ts ON authentications(timestamp);
+  CREATE INDEX IF NOT EXISTS idx_dp_raceId ON daily_progress(raceId);
+  CREATE INDEX IF NOT EXISTS idx_dp_date ON daily_progress(date);
+`;
+
+// ── 공통 API ─────────────────────────────────────────────────────
+
 export const initDatabase = async () => {
-  try {
-    db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-
-    // 테이블 생성
-    await db.execAsync(`
-      -- races 테이블: 경주 정보
-      CREATE TABLE IF NOT EXISTS races (
-        raceId TEXT PRIMARY KEY,
-        startDate TEXT NOT NULL,
-        endDate TEXT NOT NULL,
-        weeklyGoal INTEGER NOT NULL,
-        authMethodGPS BOOLEAN DEFAULT 1,
-        authMethodPhoto BOOLEAN DEFAULT 1,
-        status TEXT CHECK(status IN ('active', 'completed', 'abandoned')) DEFAULT 'active',
-        finalResult TEXT CHECK(finalResult IN ('rabbit', 'turtle', 'tie', 'pending')) DEFAULT 'pending',
-        completionRate REAL DEFAULT 0.0,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL
-      );
-
-      -- authentications 테이블: 인증 기록
-      CREATE TABLE IF NOT EXISTS authentications (
-        authId TEXT PRIMARY KEY,
-        raceId TEXT NOT NULL REFERENCES races(raceId) ON DELETE CASCADE,
-        type TEXT NOT NULL CHECK(type IN ('gps', 'photo')),
-
-        -- GPS 데이터
-        distance REAL,
-        duration INTEGER,
-        startLat REAL,
-        startLng REAL,
-        endLat REAL,
-        endLng REAL,
-
-        -- 사진 데이터
-        photoPath TEXT,
-        photoTimestamp TEXT,
-        memo TEXT,
-
-        -- 메타데이터
-        timestamp TEXT NOT NULL,
-        createdAt TEXT NOT NULL,
-        isValid BOOLEAN DEFAULT 1,
-        validatedAt TEXT
-      );
-
-      -- daily_progress 테이블: 일일 진행상황
-      CREATE TABLE IF NOT EXISTS daily_progress (
-        progressId TEXT PRIMARY KEY,
-        raceId TEXT NOT NULL REFERENCES races(raceId) ON DELETE CASCADE,
-        date TEXT NOT NULL,
-
-        rabbitDistance REAL DEFAULT 0.0,
-        rabbitCount INTEGER DEFAULT 0,
-
-        turtleExpectedDistance REAL DEFAULT 0.0,
-        turtleExpectedCount INTEGER DEFAULT 0,
-
-        completionRate REAL DEFAULT 0.0,
-
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL,
-
-        UNIQUE(raceId, date)
-      );
-
-      -- 인덱스 생성
-      CREATE INDEX IF NOT EXISTS idx_races_status ON races(status);
-      CREATE INDEX IF NOT EXISTS idx_authentications_raceId ON authentications(raceId);
-      CREATE INDEX IF NOT EXISTS idx_authentications_timestamp ON authentications(timestamp);
-      CREATE INDEX IF NOT EXISTS idx_daily_progress_raceId ON daily_progress(raceId);
-      CREATE INDEX IF NOT EXISTS idx_daily_progress_date ON daily_progress(date);
-    `);
-
-    console.log('✅ Database initialized successfully');
-    return db;
-  } catch (error) {
-    console.error('❌ Database initialization failed:', error);
-    throw error;
+  if (Platform.OS === 'web') {
+    webStore = loadWebStore();
+    console.log('✅ Web DB initialized (localStorage)');
+    return webStore;
   }
+
+  // 네이티브: expo-sqlite 동적 로드 (웹 번들에 포함 방지)
+  const SQLite = await import('expo-sqlite');
+  sqliteDb = await SQLite.openDatabaseAsync(DATABASE_NAME);
+  await sqliteDb.execAsync(CREATE_TABLES_SQL);
+  console.log('✅ SQLite DB initialized');
+  return sqliteDb;
 };
 
-/**
- * 데이터베이스 인스턴스 반환
- */
 export const getDatabase = () => {
-  if (!db) {
-    throw new Error('Database not initialized. Call initDatabase() first.');
+  if (Platform.OS === 'web') {
+    if (!webStore) throw new Error('DB not initialized');
+    return webStore;
   }
-  return db;
+  if (!sqliteDb) throw new Error('DB not initialized');
+  return sqliteDb;
 };
 
-/**
- * 데이터베이스 초기화 (테스트용)
- */
 export const resetDatabase = async () => {
-  try {
-    if (db) {
-      await db.execAsync(`
+  if (Platform.OS === 'web') {
+    webStore = { races: [], authentications: [], daily_progress: [] };
+    persistStore();
+  } else {
+    if (sqliteDb) {
+      await sqliteDb.execAsync(`
         DROP TABLE IF EXISTS daily_progress;
         DROP TABLE IF EXISTS authentications;
         DROP TABLE IF EXISTS races;
       `);
-      console.log('✅ Database reset successfully');
     }
-  } catch (error) {
-    console.error('❌ Database reset failed:', error);
   }
+  console.log('✅ DB reset');
 };
 
-export default db;
+export default null;

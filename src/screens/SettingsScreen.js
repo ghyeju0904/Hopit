@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
-import { View, Alert, StyleSheet } from 'react-native';
+import { View, Alert, StyleSheet, Platform, TextInput as RNTextInput } from 'react-native';
 import { TextInput, Checkbox, Button as PaperButton } from 'react-native-paper';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { HopButton, HopCard, HopScreen, HopText } from '../components';
+
+// DateTimePicker은 웹에서 동작하지 않으므로 네이티브에서만 로드
+let DateTimePicker = null;
+if (Platform.OS !== 'web') {
+  DateTimePicker = require('@react-native-community/datetimepicker').default;
+}
 import { colors, spacing, typography } from '../theme/tokens';
 import { copy } from '../constants/copy';
 import { createRace } from '../database/queries';
@@ -91,11 +96,31 @@ const SettingsScreen = ({ navigation, route }) => {
           </PaperButton>
         </View>
 
-        {showStartPicker && (
-          <DateTimePicker value={startDate} mode="date" onChange={handleStartDateChange} />
-        )}
-        {showEndPicker && (
-          <DateTimePicker value={endDate} mode="date" onChange={handleEndDateChange} />
+        {Platform.OS === 'web' ? (
+          <View style={styles.webDateRow}>
+            <RNTextInput
+              type="date"
+              style={styles.webDateInput}
+              value={startDate.toISOString().slice(0, 10)}
+              onChange={e => setStartDate(new Date(e.target.value))}
+            />
+            <HopText variant="body" tone="light" style={styles.dateSeparator}>~</HopText>
+            <RNTextInput
+              type="date"
+              style={styles.webDateInput}
+              value={endDate.toISOString().slice(0, 10)}
+              onChange={e => setEndDate(new Date(e.target.value))}
+            />
+          </View>
+        ) : (
+          <>
+            {showStartPicker && DateTimePicker && (
+              <DateTimePicker value={startDate} mode="date" onChange={handleStartDateChange} />
+            )}
+            {showEndPicker && DateTimePicker && (
+              <DateTimePicker value={endDate} mode="date" onChange={handleEndDateChange} />
+            )}
+          </>
         )}
       </HopCard>
 
@@ -202,6 +227,19 @@ const styles = StyleSheet.create({
   },
   dateSeparator: {
     marginHorizontal: spacing.sm
+  },
+  webDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm
+  },
+  webDateInput: {
+    flex: 1,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    fontSize: 14
   },
   goalButtons: {
     flexDirection: 'row',
