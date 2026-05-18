@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start *)",
+      "PowerShell(Get-Content *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npx serve *)",
+      "Bash(npx expo *)",
+      "Bash(New-Item *)",
+      "PowerShell(New-Item *)",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "mcp__claude_ai_Notion__notion-create-pages",
+      "Bash(gh workflow *)",
+      "PowerShell(gh workflow *)",
+      "PowerShell(curl *)",
+      "Bash(git fetch *)",
+      "Bash(git ls-tree *)",
+      "Bash(python *)",
+      "Bash(pip install *)"
+    ]
+  }
+}

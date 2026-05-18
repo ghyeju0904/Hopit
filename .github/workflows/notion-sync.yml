@@ -22,6 +22,16 @@ jobs:
         with:
           node-version: '20'
 
+      - name: 시크릿 확인 (디버그)
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: |
+          if [ -z "$NOTION_TOKEN" ]; then
+            echo "❌ NOTION_TOKEN이 비어있음 - 시크릿 등록 확인 필요"
+          else
+            echo "✅ NOTION_TOKEN 확인됨 (길이: ${#NOTION_TOKEN}자)"
+          fi
+
       - name: Notion 동기화 실행
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
