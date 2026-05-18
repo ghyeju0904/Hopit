@@ -84,7 +84,8 @@ export const getAllRaces = async () => {
 export const saveAuthentication = async (raceId, authData) => {
   const authId = uuidv4();
   const now = new Date().toISOString();
-  const { type, distance, duration, startLat, startLng, endLat, endLng, photoPath, memo } = authData;
+  const { type, distance, duration, startLat, startLng, endLat, endLng, photoPath, memo, analysisData } = authData;
+  const analysisJson = analysisData ? JSON.stringify(analysisData) : null;
 
   if (isWeb) {
     getDatabase().authentications.push({
@@ -93,6 +94,7 @@ export const saveAuthentication = async (raceId, authData) => {
       startLat: startLat || null, startLng: startLng || null,
       endLat: endLat || null, endLng: endLng || null,
       photoPath: photoPath || null, memo: memo || null,
+      analysisData: analysisJson,
       timestamp: now, createdAt: now, isValid: 1
     });
     persistStore();
@@ -100,11 +102,11 @@ export const saveAuthentication = async (raceId, authData) => {
     const db = getDatabase();
     await db.runAsync(
       `INSERT INTO authentications
-        (authId,raceId,type,distance,duration,startLat,startLng,endLat,endLng,photoPath,memo,timestamp,createdAt)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        (authId,raceId,type,distance,duration,startLat,startLng,endLat,endLng,photoPath,memo,analysisData,timestamp,createdAt)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [authId, raceId, type, distance || null, duration || null,
        startLat || null, startLng || null, endLat || null, endLng || null,
-       photoPath || null, memo || null, now, now]
+       photoPath || null, memo || null, analysisJson, now, now]
     );
   }
   console.log(`✅ Auth saved: ${authId} (${type})`);

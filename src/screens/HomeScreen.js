@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, StyleSheet, ImageBackground, Image,
-  Animated, Dimensions, ScrollView, TouchableOpacity, Platform,
+  Animated, Dimensions, ScrollView, TouchableOpacity,
 } from 'react-native';
 import { HopButton, HopText } from '../components';
 import { colors, spacing } from '../theme/tokens';
@@ -20,13 +20,17 @@ import {
 // ── 화면 크기 ───────────────────────────────────────────────────
 const { width: SW, height: SH } = Dimensions.get('window');
 
-// 트랙 이미지 원본 1536×1024
-// 비율 유지 높이를 화면 높이 22% 이내로 제한 (375×812 기준 → ~178px)
+// 모바일 기준 너비 제한 (웹 브라우저에서도 430px 이내)
+const EFFECTIVE_W = Math.min(SW, 430);
+
+// 트랙 이미지 원본 1536×1024 (3:2 비율)
+// cover 모드: 너비 기준으로 채우고 상하 크롭 → 비율 왜곡 없음
 const IMG_W = 1536;
 const IMG_H = 1024;
+// 유효 너비 기준 자연 비율 높이, 화면 높이 32% 이내로 제한
 const TRACK_H = Math.min(
-  Math.round((SW / IMG_W) * IMG_H),
-  Math.round(SH * 0.22),
+  Math.round((EFFECTIVE_W / IMG_W) * IMG_H),
+  Math.round(SH * 0.32),
 );
 
 // 트랙 범위 (원본 픽셀 → 비율)
@@ -35,8 +39,8 @@ const X_START_R = 0.09;   // ~9%
 const X_END_R   = 0.90;   // ~90%
 const Y_FLOOR_R = 0.795;  // 캐릭터 발 위치 (~79.5% from top)
 
-const TRACK_X_START = SW * X_START_R;
-const TRACK_X_END   = SW * X_END_R;
+const TRACK_X_START = EFFECTIVE_W * X_START_R;
+const TRACK_X_END   = EFFECTIVE_W * X_END_R;
 const TRACK_FLOOR_Y = TRACK_H * Y_FLOOR_R;
 
 // 캐릭터 표시 크기 (더 크게 표시)
@@ -133,7 +137,7 @@ const HomeScreen = ({ navigation }) => {
           <ImageBackground
             source={require('../../assets/track.png')}
             style={styles.trackImg}
-            resizeMode="stretch"
+            resizeMode="cover"
           />
         </View>
         <View style={styles.emptyPanel}>
@@ -166,7 +170,7 @@ const HomeScreen = ({ navigation }) => {
         <ImageBackground
           source={require('../../assets/track.png')}
           style={styles.trackImg}
-          resizeMode="stretch"
+          resizeMode="cover"
         >
           {/* 토끼 (사용자) */}
           <Animated.View
@@ -333,12 +337,13 @@ const styles = StyleSheet.create({
 
   // 트랙
   trackWrapper: {
-    width: SW,
+    width: EFFECTIVE_W,
     height: TRACK_H,
     overflow: 'hidden',
+    alignSelf: 'center',
   },
   trackImg: {
-    width: SW,
+    width: EFFECTIVE_W,
     height: TRACK_H,
   },
   charAbs: {
@@ -348,7 +353,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     alignSelf: 'center',
-    left: SW / 2 - 80,
+    left: EFFECTIVE_W / 2 - 80,
     width: 160,
     backgroundColor: 'rgba(0,0,0,0.45)',
     borderRadius: 10,

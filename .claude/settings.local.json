@@ -20,7 +20,11 @@
       "Bash(git fetch *)",
       "Bash(git ls-tree *)",
       "Bash(python *)",
-      "Bash(pip install *)"
+      "Bash(pip install *)",
+      "Bash(gh run *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\dev\\\\project\\\\Hopit\" -Recurse -Filter \"*.js\" -o BasicFileInfo)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\dev\\\\project\\\\Hopit\" -Recurse -Directory | Where-Object {$_.FullName -notmatch 'node_modules'} | Select-Object -ExpandProperty FullName | Sort-Object)"
     ]
   }
 }

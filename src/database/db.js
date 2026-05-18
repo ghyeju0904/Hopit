@@ -44,6 +44,7 @@ const CREATE_TABLES_SQL = `
     distance REAL, duration INTEGER,
     startLat REAL, startLng REAL, endLat REAL, endLng REAL,
     photoPath TEXT, photoTimestamp TEXT, memo TEXT,
+    analysisData TEXT,
     timestamp TEXT NOT NULL, createdAt TEXT NOT NULL,
     isValid BOOLEAN DEFAULT 1, validatedAt TEXT
   );
@@ -77,6 +78,10 @@ export const initDatabase = async () => {
   const SQLite = await import('expo-sqlite');
   sqliteDb = await SQLite.openDatabaseAsync(DATABASE_NAME);
   await sqliteDb.execAsync(CREATE_TABLES_SQL);
+  // 기존 설치 마이그레이션: analysisData 컬럼 없으면 추가
+  await sqliteDb.execAsync(
+    'ALTER TABLE authentications ADD COLUMN analysisData TEXT;'
+  ).catch(() => {});
   console.log('✅ SQLite DB initialized');
   return sqliteDb;
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, View } from 'react-native';
 import { MD3LightTheme as DefaultTheme, PaperProvider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -208,9 +208,21 @@ export default function App() {
     return <CenteredLoader message="데이터 준비 중..." />;
   }
 
-  return (
+  const content = (
     <PaperProvider theme={theme}>
       <RootNavigator />
     </PaperProvider>
   );
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#111', alignItems: 'center' }}>
+        <View style={{ width: '100%', maxWidth: 430, flex: 1 }}>
+          {content}
+        </View>
+      </View>
+    );
+  }
+
+  return content;
 }
